@@ -1,0 +1,9 @@
+streamlit==1.17.0
+pandas
+numpy
+matplotlib==3.5.1
+seaborn
+datetime
+kyber_dwh
+io
+altair<5

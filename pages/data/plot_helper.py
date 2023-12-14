@@ -1,9 +1,7 @@
 import io
-
 import seaborn as sns
 from matplotlib import pyplot as plt
 from pages.data.helper_functions import get_ordered_half_years, add_days_between_column
-
 from pandas import DataFrame
 
 
