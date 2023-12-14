@@ -1,9 +1,8 @@
 streamlit==1.17.0
-pandas
-numpy
-matplotlib==3.5.1
-seaborn
+kyber-dwh @ git+ssh://git@github.com/Attest/dwh.git#egg=dwh
+matplotlib==3.6.0
+numpy==1.23.3
+seaborn==0.12.2
 datetime
-kyber_dwh
 io
 altair<5
