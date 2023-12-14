@@ -1,4 +1,5 @@
-interaction_query = """WITH num_engaged_days AS (
+interaction_query = """
+WITH num_engaged_days AS (
     SELECT DISTINCT
     p.maker_guid,
     (TO_CHAR(DATE_TRUNC('month', p.dvce_created_tstamp), 'YYYY-MM')) AS engaged_month,
@@ -12,9 +13,8 @@ SELECT
     acct.account_id,
     (TO_CHAR(DATE_TRUNC('month', a.day_date), 'YYYY-MM')) AS engaged_month,
     ned.engaged_days,
+    a.total_engaged_time_in_s / 60 AS total_engaged_time_in_m,
     a.num_unique_interactions,
-    a.results_num_unique_interactions,
-    a.total_engaged_time_in_s/ 60.0 AS total_engaged_time_in_m,
     a.generic_active_maker,
     a.results_active_maker,
     acct.total_account_arr
@@ -30,14 +30,16 @@ AND total_engaged_time_in_s IS NOT NULL
 AND (NOT m.is_attest OR m.is_attest IS NULL)
 AND m.has_ever_subscribed = 'true'
 AND (acct.account_type <> 'Churned Customer' OR (acct.account_type = 'Churned Customer' AND 
-(TO_CHAR(DATE_TRUNC('month', acct.churned_date), 'YYYY-MM')) <= ned.engaged_month))"""
+(TO_CHAR(DATE_TRUNC('month', acct.churned_date), 'YYYY-MM')) <= ned.engaged_month))
+"""
 
 
-survey_query = """WITH survey_count_day AS (
+survey_query = """
+WITH survey_count_day AS (
     SELECT DISTINCT
     maker_id,
     (TO_CHAR(DATE_TRUNC('day', purchase_time), 'YYYY-MM-DD')) AS purchase_day,
-    COUNT(*) AS total_survey_day
+    COUNT(*) AS daily_total_survey
     FROM dwh.dbt_reporting.surveys
     WHERE status NOT IN ('archived', 'deleted', 'draft') 
     AND purchase_time > '2022-01-01'
@@ -49,7 +51,7 @@ survey_count_month AS (
     maker_id,
     (TO_CHAR(DATE_TRUNC('month', DATE(purchase_day)), 'YYYY-MM')) AS purchase_month,
     COUNT(*) AS num_days_survey, 
-    SUM(total_survey_day) AS total_survey_month
+    SUM(daily_total_survey) AS monthly_total_survey
     FROM survey_count_day
     GROUP BY maker_id, (TO_CHAR(DATE_TRUNC('month', DATE(purchase_day)), 'YYYY-MM'))
 )
@@ -59,9 +61,9 @@ SELECT DISTINCT
     acct.account_id,
     scm.purchase_month,
     scm.num_days_survey,
-    scm.total_survey_month,
+    scm.monthly_total_survey,
     scd.purchase_day,
-    (TO_CHAR(DATE_TRUNC('month', DATE(scd.purchase_day)), 'YYYY')) AS purchase_year,
+    (TO_CHAR(DATE_TRUNC('year', DATE(scd.purchase_day)), 'YYYY')) AS purchase_year,
     acct.total_account_arr
 FROM dwh.dbt_reporting.makers m
 LEFT JOIN dwh.dbt_reporting.accounts AS acct ON acct.account_id = m.account_id
@@ -71,4 +73,5 @@ WHERE scm.purchase_month >= '2022-01'
 AND (NOT m.is_attest OR m.is_attest IS NULL)
 AND m.has_ever_subscribed = 'true'
 AND (acct.account_type <> 'Churned Customer' OR (acct.account_type = 'Churned Customer' AND 
-(TO_CHAR(DATE_TRUNC('month', acct.churned_date), 'YYYY-MM')) <= scm.purchase_month))"""
+(TO_CHAR(DATE_TRUNC('month', acct.churned_date), 'YYYY-MM')) <= scm.purchase_month))
+"""

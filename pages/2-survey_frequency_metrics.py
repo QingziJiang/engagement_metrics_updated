@@ -3,10 +3,38 @@ from pages.data.data_helper import get_data_for_survey_frequency_metrics
 from pages.data.helper_functions import add_days_between_column
 from pages.data.plot_helper import run_survey_plotting_pipeline
 import pandas as pd
+from datetime import datetime
+
+# create date range and default dates
+default_start_month = pd.to_datetime('2022-01-01')
+default_end_month = datetime.now().strftime('%Y-%m')
+date_range = pd.date_range(default_start_month, default_end_month, freq='MS').strftime('%Y-%m')
+
+# initialise session state for start and end dates
+if 'start_month' not in st.session_state or 'end_month' not in st.session_state:
+    st.session_state.start_month = date_range[0]
+    st.session_state.end_month = date_range[-1]
+
+# sidebar for date selection
+st.sidebar.title('Please select dates')
+st.sidebar.write('**Data dates back to 2022-01')
+start_month = st.sidebar.selectbox('Start Month', date_range[:-1], index=0)
+end_month = st.sidebar.selectbox('End Month', date_range[1:], len(date_range[1:]) - 1)
+if start_month != st.session_state.start_month:
+    st.session_state.start_month = start_month
+if end_month != st.session_state.end_month:
+    st.session_state.end_month = end_month
+
+if st.session_state.end_month < st.session_state.start_month:
+    st.sidebar.error('End date cannot be earlier than start date. Please select again.')
+    st.session_state.start_month = default_start_month.strftime('%Y-%m')
+    st.session_state.end_month = default_end_month
 
 
 def main_pipeline_p2():
     survey_df = get_data_for_survey_frequency_metrics()
+    survey_df = survey_df[(survey_df['purchase_month'] >= st.session_state.start_month)
+                          & (survey_df['purchase_month'] <= st.session_state.end_month)]
 
     final_dic = run_survey_plotting_pipeline(survey_df)
 
@@ -20,7 +48,7 @@ def main_pipeline_p2():
     st.write('Number of accounts that purchased a survey:', len(survey_df['account_id'].value_counts()))
     total_survey = survey_df[['maker_id', 'purchase_month', 'total_survey_month']].drop_duplicates()
     st.write('Total number of surveys purchased:', total_survey['total_survey_month'].sum())
-    st.write("***since 2022-01-01")
+    st.write("***since", start_month)
 
     st.markdown("""---""")
 
