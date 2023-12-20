@@ -2,6 +2,7 @@ import streamlit as st
 from pages.data.data_helper import get_data_for_survey_frequency_metrics
 from pages.data.helper_functions import add_days_between_column
 from pages.data.plot_helper import run_survey_plotting_pipeline
+from pages.data.helper_functions import adjusted_start_month, adjusted_end_month
 import pandas as pd
 from datetime import datetime
 
@@ -32,11 +33,15 @@ if st.session_state.end_month < st.session_state.start_month:
 
 
 def main_pipeline_p2():
-    survey_df = get_data_for_survey_frequency_metrics()
-    survey_df = survey_df[(survey_df['purchase_month'] >= st.session_state.start_month)
-                          & (survey_df['purchase_month'] <= st.session_state.end_month)]
+    orig_survey_df = get_data_for_survey_frequency_metrics()
+    survey_df = orig_survey_df[(orig_survey_df['purchase_month'] >= st.session_state.start_month)
+                          & (orig_survey_df['purchase_month'] <= st.session_state.end_month)]
+    arr_start_month = adjusted_start_month(st.session_state.start_month)
+    arr_end_month = adjusted_end_month(st.session_state.end_month)
+    arr_survey_df = survey_df[(survey_df['purchase_month'] >= arr_start_month)
+                          & (survey_df['purchase_month'] <= arr_end_month)]
 
-    final_dic = run_survey_plotting_pipeline(survey_df)
+    final_dic = run_survey_plotting_pipeline(orig_survey_df, survey_df, arr_survey_df)
 
     st.header(
         f"""🗓️ Survey Frequency Metrics""", divider='rainbow'
@@ -46,8 +51,9 @@ def main_pipeline_p2():
 
     st.write('Number of makers who purchased a survey:', len(survey_df['maker_id'].value_counts()))
     st.write('Number of accounts that purchased a survey:', len(survey_df['account_id'].value_counts()))
-    total_survey = survey_df[['maker_id', 'purchase_month', 'total_survey_month']].drop_duplicates()
-    st.write('Total number of surveys purchased:', total_survey['total_survey_month'].sum())
+
+    total_survey = survey_df[['maker_id', 'purchase_month', 'monthly_total_survey']].drop_duplicates()
+    st.write('Total number of surveys purchased:', total_survey['monthly_total_survey'].sum())
     st.write("***since", start_month)
 
     st.markdown("""---""")
@@ -83,6 +89,10 @@ def main_pipeline_p2():
     st.write(
         f"""Plot of *Average Number of Survey Purchased* per Account across Account ARR."""
     )
+
+    if arr_survey_df.empty:
+        st.error('The selected time frame does not contain at least one entire half year period, the ARR plots are done'
+                 ' with the default time frame')
 
     st.pyplot(fig2)
 

@@ -13,7 +13,7 @@ st.sidebar.success("Select an option from above.")
 st.markdown(
     """    
     Measuring user engagement on our platform is essential for understanding how effectively our product is meeting 
-    user needs and for making data-driven decisions to improve it.
+    user needs.
     
     **👈👈👈**
 
@@ -27,4 +27,3 @@ st.markdown(
     All charts are downloadable! 🤗
 """
 )
-

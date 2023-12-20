@@ -64,3 +64,24 @@ def add_days_between_column(df: DataFrame):
 
     return df_days
 
+
+def adjusted_start_month(month):
+    year = int(month[:4])
+    month_num = int(month[5:])
+    if month_num == 1:
+        return f"{year}-01"
+    elif month_num <= 7:
+        return f"{year}-07"
+    else:
+        return f"{year+1}-01"
+
+
+def adjusted_end_month(month):
+    year = int(month[:4])
+    month_num = int(month[5:])
+    if month_num == 12:
+        return f"{year}-12"
+    if month_num >= 6:
+        return f"{year}-06"
+    else:
+        return f"{year-1}-12"

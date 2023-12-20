@@ -21,7 +21,8 @@ SELECT
 FROM "dwh"."dbt_reporting"."active_makers" AS a
 LEFT JOIN dwh.dbt_reporting.makers AS m ON a.maker_guid = m.maker_guid
 LEFT JOIN dwh.dbt_reporting.accounts AS acct ON acct.account_id = m.account_id
-LEFT JOIN num_engaged_days AS ned ON ned.maker_guid = a.maker_guid AND ned.engaged_month = (TO_CHAR(DATE_TRUNC('month', a.day_date), 'YYYY-MM'))
+LEFT JOIN num_engaged_days AS ned ON ned.maker_guid = a.maker_guid AND ned.engaged_month = (TO_CHAR(DATE_TRUNC('month', 
+a.day_date), 'YYYY-MM'))
 
 WHERE (TO_CHAR(DATE_TRUNC('month', a.day_date), 'YYYY-MM')) >= '2022-10'
 AND LAST_DAY(a.day_date) = a.day_date
@@ -68,7 +69,8 @@ SELECT DISTINCT
 FROM dwh.dbt_reporting.makers m
 LEFT JOIN dwh.dbt_reporting.accounts AS acct ON acct.account_id = m.account_id
 LEFT JOIN survey_count_day scd ON m.maker_id = scd.maker_id
-LEFT JOIN survey_count_month scm ON m.maker_id = scm.maker_id AND (TO_CHAR(DATE_TRUNC('month', DATE(scd.purchase_day)), 'YYYY-MM')) = scm.purchase_month
+LEFT JOIN survey_count_month scm ON m.maker_id = scm.maker_id AND (TO_CHAR(DATE_TRUNC('month', DATE(scd.purchase_day)), 
+'YYYY-MM')) = scm.purchase_month
 WHERE scm.purchase_month >= '2022-01'
 AND (NOT m.is_attest OR m.is_attest IS NULL)
 AND m.has_ever_subscribed = 'true'

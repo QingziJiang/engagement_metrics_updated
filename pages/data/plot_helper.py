@@ -250,15 +250,15 @@ def plot_num_survey(df: DataFrame):
     :return: a line plot of Average Number of Survey purchased
     """
     survey_freq_acct = df.drop(['maker_id', 'purchase_day'], axis=1).drop_duplicates()
-    avg_survey_acct = survey_freq_acct.groupby(['purchase_month'])['total_survey_month'].mean().round(2).reset_index()
+    avg_survey_acct = survey_freq_acct.groupby(['purchase_month'])['monthly_total_survey'].mean().round(2).reset_index()
 
     fig = plt.figure(figsize=(14, 4))
-    ax = sns.lineplot(data=avg_survey_acct, x='purchase_month', y='total_survey_month', marker='o')
+    ax = sns.lineplot(data=avg_survey_acct, x='purchase_month', y='monthly_total_survey', marker='o')
 
-    plt.fill_between(avg_survey_acct['purchase_month'], avg_survey_acct['total_survey_month'], color='steelblue',
+    plt.fill_between(avg_survey_acct['purchase_month'], avg_survey_acct['monthly_total_survey'], color='steelblue',
                      alpha=0.4)
 
-    for x, y in zip(avg_survey_acct['purchase_month'], avg_survey_acct['total_survey_month']):
+    for x, y in zip(avg_survey_acct['purchase_month'], avg_survey_acct['monthly_total_survey']):
         plt.text(x, y - 0.4, f'{y:.2f}', color='black', ha='center', va='top')
 
     plt.title('Average Number of Survey Purchased per Account per Month')
@@ -288,7 +288,7 @@ def plot_arr_num_survey(df: DataFrame):
     # prepare aggregated data for bar plot
     survey_freq_acct = df.drop(['maker_id', 'purchase_day'], axis=1).drop_duplicates()
     survey_freq_arr = survey_freq_acct.groupby(['account_arr_binned', 'half_year_period'])[
-        'total_survey_month'].mean().round(2).reset_index()
+        'monthly_total_survey'].mean().round(2).reset_index()
 
     # prepare aggregated data for stacked row chart
     num_accts_arr = survey_freq_acct.groupby(['account_arr_binned']).agg(
@@ -297,7 +297,7 @@ def plot_arr_num_survey(df: DataFrame):
     # bar plot
     fig, ax = plt.subplots(2, 1, figsize=(12, 8), gridspec_kw={'height_ratios': [6, 1]})
 
-    sns.barplot(data=survey_freq_arr, x='half_year_period', y='total_survey_month', hue='account_arr_binned',
+    sns.barplot(data=survey_freq_arr, x='half_year_period', y='monthly_total_survey', hue='account_arr_binned',
                 palette='Set2', order=ordered_half_years, ax=ax[0])
     ax[0].set_title('Average Number of Survey Purchased by Account ARR')
     ax[0].set_xlabel('Six-month Period')
@@ -430,12 +430,13 @@ def plot_arr_days_between(df: DataFrame):
     return fig, buf_read
 
 
-def run_interaction_plotting_pipeline(df: DataFrame):
+def run_interaction_plotting_pipeline(df: DataFrame, arr_df: DataFrame):
     """
     This pipeline function runs all the functions necessary to get the interaction metrics plots.
 
     Args:
         df (DataFrame): interaction_df, the input dataframe for active makers and engagement metrics.
+        arr_df (DataFrame): arr_interaction_df, the input dataframe for arr plots, which only include entire half years.
     Returns:
         A dictionary of all the figure object (fig) to be plotted and a buffer (buf_read)
         which is used for downloading the figures.
@@ -445,12 +446,19 @@ def run_interaction_plotting_pipeline(df: DataFrame):
 
     # surveys_df, size_df = prep_dataframe_for_plotting(df, cur_col)
 
+    # If the selected time frame does not contain at least one entire half year period, the ARR plots are done with the
+    # default time frame
+    if arr_df.empty:
+        arr_df = df
+    else:
+        arr_df = arr_df
+
     # interaction metrics
     fig1, img1 = plot_active_makers(df)
     fig2, img2 = plot_engaged_time(df)
-    fig3, img3 = plot_arr_engaged_time(df)
+    fig3, img3 = plot_arr_engaged_time(arr_df)
     fig4, img4 = plot_days_engaged(df)
-    fig5, img5 = plot_arr_days_engaged(df)
+    fig5, img5 = plot_arr_days_engaged(arr_df)
 
     final_dic = dict(
         {
@@ -470,21 +478,29 @@ def run_interaction_plotting_pipeline(df: DataFrame):
     return final_dic
 
 
-def run_survey_plotting_pipeline(df: DataFrame):
+def run_survey_plotting_pipeline(orig_df: DataFrame, df: DataFrame, arr_df: DataFrame):
     """
     This pipeline function runs all the functions necessary to get all the plots.
 
     Args:
         df (DataFrame): survey_df, the input dataframe for survey frequency metrics.
+        arr_df (DataFrame): arr_survey_df, the input dataframe for arr plots, which only include entire half years.
     Returns:
         A dictionary of all the figure object (fig) to be plotted and a buffer (buf_read)
         which is used for downloading the figures.
     """
 
+    # If the selected time frame does not contain at least one entire half year period, the ARR plots are done with the
+    # default time frame
+    if arr_df.empty:
+        arr_df = df
+    else:
+        arr_df = arr_df
+
     # survey freq metrics
     fig1, img1 = plot_num_survey(df)
-    fig2, img2 = plot_arr_num_survey(df)
-    fig3, img3 = plot_arr_days_between(df)
+    fig2, img2 = plot_arr_num_survey(arr_df)
+    fig3, img3 = plot_arr_days_between(orig_df)
 
     final_dic = dict(
         {

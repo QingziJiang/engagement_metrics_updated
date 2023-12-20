@@ -1,6 +1,7 @@
 import streamlit as st
 from pages.data.data_helper import get_data_for_interaction_metrics
 from pages.data.plot_helper import run_interaction_plotting_pipeline
+from pages.data.helper_functions import adjusted_start_month, adjusted_end_month
 import pandas as pd
 from datetime import datetime
 
@@ -34,8 +35,12 @@ def main_pipeline_p1():
     interaction_df = get_data_for_interaction_metrics()
     interaction_df = interaction_df[(interaction_df['engaged_month'] >= st.session_state.start_month)
                           & (interaction_df['engaged_month'] <= st.session_state.end_month)]
+    arr_start_month = adjusted_start_month(st.session_state.start_month)
+    arr_end_month = adjusted_end_month(st.session_state.end_month)
+    arr_interaction_df = interaction_df[(interaction_df['engaged_month'] >= arr_start_month)
+                          & (interaction_df['engaged_month'] <= arr_end_month)]
 
-    final_dic = run_interaction_plotting_pipeline(interaction_df)
+    final_dic = run_interaction_plotting_pipeline(interaction_df, arr_interaction_df)
 
     st.header(
         f"""💫 Platform Interaction Metrics""", divider='rainbow'
@@ -97,6 +102,9 @@ def main_pipeline_p1():
     st.write(
         f"""Plot of *Average Engagement Time* by Account ARR."""
     )
+    if arr_interaction_df.empty:
+        st.error('The selected time frame does not contain at least one entire half year period, the ARR plots are done'
+                 ' with the default time frame')
 
     fig3 = final_dic["fig3"]
     img3 = final_dic["img3"]
@@ -141,6 +149,10 @@ def main_pipeline_p1():
     st.write(
         f"""The Average Number of Days Engaged by Account ARR"""
     )
+
+    if arr_interaction_df.empty:
+        st.error('The selected time frame does not contain at least one entire half year period, the ARR plots are done'
+                 ' with the default time frame')
 
     fig5 = final_dic["fig5"]
     img5 = final_dic["img5"]
