@@ -485,6 +485,7 @@ def run_survey_plotting_pipeline(orig_df: DataFrame, df: DataFrame, arr_df: Data
     Args:
         df (DataFrame): survey_df, the input dataframe for survey frequency metrics.
         arr_df (DataFrame): arr_survey_df, the input dataframe for arr plots, which only include entire half years.
+        orig_df:
     Returns:
         A dictionary of all the figure object (fig) to be plotted and a buffer (buf_read)
         which is used for downloading the figures.

@@ -13,8 +13,6 @@ def get_dwh():
 
 @st.cache_resource  # This prevents from reloading the data needlessly
 def get_data_for_interaction_metrics():
-    st.write("LOADING DATA")
-    print("LOADING DATA")
     dwh = get_dwh()
     query = interaction_query
     df = dwh.read_sql_query(query)
