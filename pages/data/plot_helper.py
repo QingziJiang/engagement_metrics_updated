@@ -20,7 +20,7 @@ def plot_active_makers(df: DataFrame):
     ).reset_index()
     agg_active_makers['non_results_makers'] = agg_active_makers['generic_makers'] - agg_active_makers['results_makers']
 
-    #  plot
+    # plot
     fig = plt.figure(figsize=(10, 8))
     ax1 = sns.barplot(x='engaged_month', y='generic_makers', data=agg_active_makers, color='skyblue',
                       label='Non-Results Makers')
@@ -31,11 +31,18 @@ def plot_active_makers(df: DataFrame):
     plt.ylabel('Number of Makers')
     plt.xlabel('Month')
 
-    for x, y in zip(agg_active_makers['engaged_month'], agg_active_makers['generic_makers']):
+    # This chunk is add tho adjust to the older version of seaborn
+    month_cate = agg_active_makers['engaged_month'].unique()
+    month_indices = {month: index for index, month in enumerate(month_cate)}
+
+    for month, y in zip(agg_active_makers['engaged_month'], agg_active_makers['generic_makers']):
+        x = month_indices[month]
         plt.text(x, y, f'{int(y)}', color='black', ha='center', va='bottom')
-    for x, y in zip(agg_active_makers['engaged_month'], agg_active_makers['results_makers']):
-        plt.text(x, y - 120, f'{int(y)}', color='white', ha='center', va='bottom')
-    for x, y in zip(agg_active_makers['engaged_month'], agg_active_makers['non_results_makers']):
+    for month, y in zip(agg_active_makers['engaged_month'], agg_active_makers['results_makers']):
+        x = month_indices[month]
+        plt.text(x, y - 125, f'{int(y)}', color='white', ha='center', va='bottom')
+    for month, y in zip(agg_active_makers['engaged_month'], agg_active_makers['non_results_makers']):
+        x = month_indices[month]
         plt.text(x, y + 140, f'{int(y)}', color='white', ha='center', va='bottom')
 
     plt.xticks(rotation=45)

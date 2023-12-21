@@ -44,8 +44,9 @@ def main_pipeline_p2():
     final_dic = run_survey_plotting_pipeline(orig_survey_df, survey_df, arr_survey_df)
 
     st.header(
-        f"""🗓️ Survey Frequency Metrics""", divider='rainbow'
+        f"""🗓️ Survey Frequency Metrics"""
     )
+    st.markdown("""<hr style="height:8px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
 
     st.header("Number of Survey Purchased")
 
@@ -60,9 +61,9 @@ def main_pipeline_p2():
 
     st.write('Number of Accounts:')
     st.write('-that purchased a survey in 2022:',
-             len(survey_df[survey_df['purchase_year'] == '2022']['account_id'].value_counts()))
+             len(orig_survey_df[orig_survey_df['purchase_year'] == '2022']['account_id'].value_counts()))
     st.write('-that purchased a survey in 2023:',
-             len(survey_df[survey_df['purchase_year'] == '2023']['account_id'].value_counts()))
+             len(orig_survey_df[orig_survey_df['purchase_year'] == '2023']['account_id'].value_counts()))
 
     st.markdown("""---""")
 

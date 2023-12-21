@@ -43,8 +43,8 @@ def main_pipeline_p1():
     final_dic = run_interaction_plotting_pipeline(interaction_df, arr_interaction_df)
 
     st.header(
-        f"""💫 Platform Interaction Metrics""", divider='rainbow'
-    )
+        f"""💫 Platform Interaction Metrics""")
+    st.markdown("""<hr style="height:8px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
 
     st.header("Active Makers/ Active Results Makers")
     st.write("A maker is defined as active if they have done ≥ 5 interactions & have viewed a page ≥ 5 mins.")
@@ -85,7 +85,7 @@ def main_pipeline_p1():
     st.pyplot(fig2)
 
     st.write(
-        """All makers who has had an active subscription (since 2022-10-01) are included for this metric for the
+        """All makers who has had an active subscription (since 2022-10-01) are included for this metric for the 
         duration while their subscription was active."""
     )
 
