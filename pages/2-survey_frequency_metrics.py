@@ -4,11 +4,11 @@ from pages.data.helper_functions import add_days_between_column
 from pages.data.plot_helper import run_survey_plotting_pipeline
 from pages.data.helper_functions import adjusted_start_month, adjusted_end_month
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # create date range and default dates
 default_start_month = pd.to_datetime('2022-01-01')
-default_end_month = datetime.now().strftime('%Y-%m')
+default_end_month = (datetime.now().replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
 date_range = pd.date_range(default_start_month, default_end_month, freq='MS').strftime('%Y-%m')
 
 # initialise session state for start and end dates
@@ -109,6 +109,20 @@ def main_pipeline_p2():
         key="btn2",
     )
 
+    with st.expander("The percentages of Accounts across ARR brackets:", expanded=True):
+
+        fig4 = final_dic["fig4"]
+        img4 = final_dic["img4"]
+        st.pyplot(fig4)
+
+        btn4 = st.download_button(
+            label="Download plot of Account% by ARR",
+            data=img4,
+            file_name=f"fig4_acct_by_arr.png",
+            mime="image/png",
+            key="btn4",
+        )
+
     st.markdown("""---""")
 
     st.header("Days Between Purchases")
@@ -157,6 +171,20 @@ def main_pipeline_p2():
         mime="image/png",
         key="btn3",
     )
+
+    with st.expander("The percentages of Makers and Accounts across ARR brackets:", expanded=True):
+
+        fig5 = final_dic["fig5"]
+        img5 = final_dic["img5"]
+        st.pyplot(fig5)
+
+        btn5 = st.download_button(
+            label="Download plot of Maker% and Account% by ARR",
+            data=img5,
+            file_name=f"fig5_maker_and_acct_by_arr.png",
+            mime="image/png",
+            key="btn5",
+        )
 
 
 main_pipeline_p2()

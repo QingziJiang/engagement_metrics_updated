@@ -3,11 +3,11 @@ from pages.data.data_helper import get_data_for_interaction_metrics
 from pages.data.plot_helper import run_interaction_plotting_pipeline
 from pages.data.helper_functions import adjusted_start_month, adjusted_end_month
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # create date range and default dates
 default_start_month = pd.to_datetime('2022-10-01')
-default_end_month = datetime.now().strftime('%Y-%m')
+default_end_month = (datetime.now().replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
 date_range = pd.date_range(default_start_month, default_end_month, freq='MS').strftime('%Y-%m')
 
 # initialise session state for start and end dates
@@ -47,7 +47,20 @@ def main_pipeline_p1():
     st.markdown("""<hr style="height:8px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
 
     st.header("Active Makers/ Active Results Makers")
-    st.write("A maker is defined as active if they have done ≥ 5 interactions & have viewed a page ≥ 5 mins.")
+
+    with st.expander("Definition of Active Makers/ Active Results Makers:"):
+        st.markdown("""   
+    - Generic Interaction: any activity on the platform is included for ***generic interactions***.
+    - Results Interactions: ***results interactions*** are filtered only for results pages; not very ‘engaging’ 
+    interactions like downloading, showing/collapsing panels, are excluded.
+    
+    ### Active Makers             
+     - A maker is defined as active if they have done ≥ 5 ***generic interactions*** & have viewed a page ≥ 5 mins
+    
+     ### Active Results Makers
+     - All active makers who have had ANY ***results interactions*** are deemed Active Results Makers.
+     
+    """)
 
     # Active maker filters
     active_makers = interaction_df[
@@ -82,12 +95,17 @@ def main_pipeline_p1():
         f"""Plot of *Average Engagement Time* per Maker by Month."""
     )
 
-    st.pyplot(fig2)
-
     st.write(
         """All makers who has had an active subscription (since 2022-10-01) are included for this metric for the 
         duration while their subscription was active."""
     )
+
+    with st.expander("Definition of Engagement:"):
+        st.markdown("""   
+    Duration of ALL generic interactions is included in the ***engagement time***
+    """)
+
+    st.pyplot(fig2)
 
     btn2 = st.download_button(
         label="Download plot of Engagement Time",
@@ -111,10 +129,6 @@ def main_pipeline_p1():
 
     st.pyplot(fig3)
 
-    st.write(
-        f"""The percentages of Maker across ARR brackets is shown in a stacked row here for reference."""
-    )
-
     btn3 = st.download_button(
         label="Download Engagement Time by ARR",
         data=img3,
@@ -122,6 +136,20 @@ def main_pipeline_p1():
         mime="image/png",
         key="btn3",
     )
+
+    with st.expander("The percentages of Maker across ARR brackets:", expanded=True):
+
+        fig6 = final_dic["fig6"]
+        img6 = final_dic["img6"]
+        st.pyplot(fig6)
+
+        btn6 = st.download_button(
+            label="Download plot of Maker% by Account ARR",
+            data=img6,
+            file_name=f"fig6_maker_by_arr.png",
+            mime="image/png",
+            key="btn6",
+        )
 
     st.markdown("""---""")
 
@@ -167,9 +195,19 @@ def main_pipeline_p1():
         key="btn5",
     )
 
-    st.write(
-        f"""The percentage of Makers across ARR brackets is shown in a stacked row here for reference."""
-    )
+    with st.expander("The percentages of Maker across ARR brackets:", expanded=True):
+
+        fig6 = final_dic["fig6"]
+        img6 = final_dic["img6"]
+        st.pyplot(fig6)
+
+        btn7 = st.download_button(
+            label="Download plot of Maker% by Account ARR",
+            data=img6,
+            file_name=f"fig6_maker_by_arr.png",
+            mime="image/png",
+            key="btn7",
+        )
 
 
 main_pipeline_p1()

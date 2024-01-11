@@ -3,6 +3,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from pages.data.helper_functions import get_ordered_half_years, add_days_between_column
 from pandas import DataFrame
+import pandas as pd
 
 
 # Interactions
@@ -103,47 +104,18 @@ def plot_arr_engaged_time(df: DataFrame):
         number_of_makers=('maker_id', 'nunique')
     ).reset_index()
 
-    # prepare aggregated data for stacked row chart
-    num_makers_arr = df.groupby(['account_arr_binned']).agg(
-        number_of_makers=('maker_id', 'nunique')).reset_index()
+    fig = plt.figure(figsize=(10, 6))
 
-    fig, ax = plt.subplots(2, 1, figsize=(10, 8), gridspec_kw={'height_ratios': [8, 1]})
-
-    # bar plot
-    sns.barplot(data=avg_engage_arr, x='half_year_period', y='avg_engaged_time_in_m', hue='account_arr_binned',
-                palette='Set2', order=ordered_half_years, ax=ax[0])
-    ax[0].set_title('Average Engagement Time by Account ARR')
-    ax[0].set_xlabel('Six-month Period')
-    ax[0].set_ylabel('Average Engagement Time (m)')
+    ax = sns.barplot(data=avg_engage_arr, x='half_year_period', y='avg_engaged_time_in_m', hue='account_arr_binned',
+                     palette='Set2', order=ordered_half_years)
+    plt.title('Average Engagement Time by Account ARR')
+    plt.ylabel('Average Engagement Time (m)')
+    plt.xlabel('Six-month Period')
 
     for m in range(len(avg_engage_arr['account_arr_binned'].value_counts())):
-        ax[0].bar_label(ax[0].containers[m])
+        ax.bar_label(ax.containers[m])
 
-    ax[0].legend(title="Account ARR")
-
-    # stacked row chart
-    num_makers = num_makers_arr['number_of_makers']
-    total = sum(num_makers)
-
-    palette = sns.color_palette("Set2", n_colors=len(num_makers_arr['account_arr_binned']))
-
-    ax[1].barh(y=0, width=num_makers[0], left=0, color=palette[0], label='<50k')
-    ax[1].barh(y=0, width=num_makers[1], left=num_makers[0], color=palette[1], label='50-100k')
-    ax[1].barh(y=0, width=num_makers[2], left=num_makers[0] + num_makers[1], color=palette[2], label='100k+')
-
-    ax[1].text(x=num_makers[0] / 2, y=0, s=f"{num_makers[0] / total * 100:.1f}%", va='center', ha='center',
-               color='white')
-    ax[1].text(x=num_makers[0] + num_makers[1] / 2, y=0, s=f"{num_makers[1] / total * 100:.1f}%", va='center',
-               ha='center', color='white')
-    ax[1].text(x=num_makers[0] + num_makers[1] + num_makers[2] / 2, y=0, s=f"{num_makers[2] / total * 100:.1f}%",
-               va='center', ha='center', color='white')
-
-    ax[1].set_yticks([])
-    ax[1].grid(False)
-    for spine in ax[1].spines.values():
-        spine.set_visible(False)
-    ax[1].set_title('Proportion of Makers by Account ARR')
-
+    ax.legend(title='ARR')
     plt.tight_layout()
 
     buf = io.BytesIO()
@@ -199,47 +171,59 @@ def plot_arr_days_engaged(df: DataFrame):
     avg_days_arr = df.groupby(['account_arr_binned', 'half_year_period'])['engaged_days'].mean().round(
         2).reset_index()
 
-    # prepare aggregated data for stacked row chart
-    num_makers_arr = df.groupby(['account_arr_binned']).agg(
-        number_of_makers=('maker_id', 'nunique')).reset_index()
-
     # bar plot
-    fig, ax = plt.subplots(2, 1, figsize=(10, 6), gridspec_kw={'height_ratios': [4, 1]})
+    fig = plt.figure(figsize=(10, 6))
 
-    sns.barplot(data=avg_days_arr, x='half_year_period', y='engaged_days', hue='account_arr_binned', palette='Set2',
-                order=ordered_half_years, ax=ax[0])
-    ax[0].set_title('Average Number of Days Visited by Account ARR')
-    ax[0].set_xlabel('Six-month Period')
-    ax[0].set_ylabel('Average Number of Days')
+    ax = sns.barplot(data=avg_days_arr, x='half_year_period', y='engaged_days', hue='account_arr_binned', palette='Set2',
+                order=ordered_half_years)
+    ax.set_title('Average Number of Days Visited by Account ARR')
+    ax.set_xlabel('Six-month Period')
+    ax.set_ylabel('Average Number of Days')
 
     for m in range(len(avg_days_arr['account_arr_binned'].value_counts())):
-        ax[0].bar_label(ax[0].containers[m])
+        ax.bar_label(ax.containers[m])
 
-    ax[0].legend(title="Account ARR", loc='lower right')
+    ax.legend(title="Account ARR", loc='lower right')
 
-    # stacked row chart
-    num_makers = num_makers_arr['number_of_makers']
-    total = sum(num_makers)
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    buf_read = buf.read()
+    plt.close()
 
-    palette = sns.color_palette("Set2", n_colors=len(num_makers_arr['account_arr_binned']))
+    return fig, buf_read
 
-    ax[1].barh(y=0, width=num_makers[0], left=0, color=palette[0], label='<50k')
-    ax[1].barh(y=0, width=num_makers[1], left=num_makers[0], color=palette[1], label='50-100k')
-    ax[1].barh(y=0, width=num_makers[2], left=num_makers[0] + num_makers[1], color=palette[2], label='100k+')
 
-    ax[1].text(x=num_makers[0] / 2, y=0, s=f"{num_makers[0] / total * 100:.1f}%", va='center', ha='center',
-               color='white')
-    ax[1].text(x=num_makers[0] + num_makers[1] / 2, y=0, s=f"{num_makers[1] / total * 100:.1f}%", va='center',
-               ha='center', color='white')
-    ax[1].text(x=num_makers[0] + num_makers[1] + num_makers[2] / 2, y=0, s=f"{num_makers[2] / total * 100:.1f}%",
-               va='center', ha='center', color='white')
+def plot_maker_by_arr(df: DataFrame):
+    ordered_half_years = get_ordered_half_years(df)
 
-    ax[1].set_yticks([])
-    ax[1].grid(False)
-    for spine in ax[1].spines.values():
-        spine.set_visible(False)
-    ax[1].set_title('Proportion of Makers by Account ARR')
-    plt.tight_layout()
+    makers_arr_halfyear = df.groupby(['half_year_period', 'account_arr_binned']).agg(
+        number_of_makers=('maker_id', 'nunique'))
+    makers_arr_tab = makers_arr_halfyear.groupby(['half_year_period', 'account_arr_binned']).sum().unstack(fill_value=0)
+    makers_arr_tab = makers_arr_tab.div(makers_arr_tab.sum(axis=1), axis=0) * 100
+
+    # Order by half year periods
+    makers_arr_tab.index = pd.CategoricalIndex(makers_arr_tab.index, categories=ordered_half_years, ordered=True)
+    makers_arr_tab.sort_index(inplace=True)
+
+    fig, ax = plt.subplots(figsize=(10, 2))
+
+    previous_width = [0] * len(makers_arr_tab.index)
+    labels = ['<50k', '50-100k', '100k+']
+    assert len(labels) == makers_arr_tab.shape[1], "Labels list must match the number of columns"
+
+    palette = sns.color_palette("Set2", n_colors=makers_arr_tab.shape[1])
+
+    for idx, (col, col_data) in enumerate(makers_arr_tab.iteritems()):
+        ax.barh(makers_arr_tab.index, col_data, color=palette[idx], left=previous_width, label=labels[idx])
+        for i, (bin, value) in enumerate(col_data.items()):
+            ax.text(previous_width[i] + value / 2, i, f"{value:.1f}%", va='center', ha='center', color='white',
+                    fontsize=10)
+            previous_width[i] += value
+
+    ax.set_xlim(0, 100)
+    ax.set_title('% of Makers by ARR')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
@@ -297,46 +281,20 @@ def plot_arr_num_survey(df: DataFrame):
     survey_freq_arr = survey_freq_acct.groupby(['account_arr_binned', 'half_year_period'])[
         'monthly_total_survey'].mean().round(2).reset_index()
 
-    # prepare aggregated data for stacked row chart
-    num_accts_arr = survey_freq_acct.groupby(['account_arr_binned']).agg(
-        number_of_accts=('account_id', 'nunique')).reset_index()
 
     # bar plot
-    fig, ax = plt.subplots(2, 1, figsize=(12, 8), gridspec_kw={'height_ratios': [6, 1]})
+    fig = plt.figure(figsize=(12, 6))
 
-    sns.barplot(data=survey_freq_arr, x='half_year_period', y='monthly_total_survey', hue='account_arr_binned',
-                palette='Set2', order=ordered_half_years, ax=ax[0])
-    ax[0].set_title('Average Number of Survey Purchased by Account ARR')
-    ax[0].set_xlabel('Six-month Period')
-    ax[0].set_ylabel('Number of Survey')
+    ax = sns.barplot(data=survey_freq_arr, x='half_year_period', y='monthly_total_survey', hue='account_arr_binned',
+                palette='Set2', order=ordered_half_years)
+    ax.set_title('Average Number of Survey Purchased by ARR')
+    ax.set_xlabel('Six-month Period')
+    ax.set_ylabel('Number of Survey')
 
     for m in range(len(survey_freq_arr['account_arr_binned'].value_counts())):
-        ax[0].bar_label(ax[0].containers[m])
+        ax.bar_label(ax.containers[m])
 
-    ax[0].legend(title="Account ARR", loc='lower right')
-
-    # stacked row
-    num_accts = num_accts_arr['number_of_accts']
-    total = sum(num_accts)
-
-    palette = sns.color_palette("Set2", n_colors=len(num_accts_arr['account_arr_binned']))
-
-    ax[1].barh(y=0, width=num_accts[0], left=0, color=palette[0], label='<50k')
-    ax[1].barh(y=0, width=num_accts[1], left=num_accts[0], color=palette[1], label='50-100k')
-    ax[1].barh(y=0, width=num_accts[2], left=num_accts[0] + num_accts[1], color=palette[2], label='100k+')
-
-    ax[1].text(x=num_accts[0] / 2, y=0, s=f"{num_accts[0] / total * 100:.1f}%", va='center', ha='center', color='white')
-    ax[1].text(x=num_accts[0] + num_accts[1] / 2, y=0, s=f"{num_accts[1] / total * 100:.1f}%", va='center', ha='center',
-               color='white')
-    ax[1].text(x=num_accts[0] + num_accts[1] + num_accts[2] / 2, y=0, s=f"{num_accts[2] / total * 100:.1f}%",
-               va='center', ha='center', color='white')
-
-    ax[1].set_yticks([])
-    ax[1].grid(False)
-    for spine in ax[1].spines.values():
-        spine.set_visible(False)
-    ax[1].set_title('Proportion of Accounts by Account ARR')
-
+    ax.legend(title="Account ARR", loc='lower right')
     plt.tight_layout()
 
     buf = io.BytesIO()
@@ -361,72 +319,121 @@ def plot_arr_days_between(df: DataFrame):
     avg_between = df_days.groupby(['purchase_year', 'account_arr_binned'])['days_from_previous'].mean().round(
         1).reset_index()
 
-    fig, ax = plt.subplots(3, 1, figsize=(10, 8), gridspec_kw={'height_ratios': [4, 1, 1]})
+    fig = plt.figure(figsize=(8, 5))
 
     # bar plot
-    sns.barplot(data=avg_between, x='purchase_year', y='days_from_previous', hue='account_arr_binned', palette='Set2',
-                order=['2022', '2023'], ax=ax[0])
-    ax[0].set_title('Average Days Between Survey Purchasing by Account ARR')
-    ax[0].set_xlabel('Year')
-    ax[0].set_ylabel('Days Between Survey Purchasing')
+    ax = sns.barplot(data=avg_between, x='purchase_year', y='days_from_previous', hue='account_arr_binned',
+                     palette='Set2', order=['2022', '2023'])
+    ax.set_title('Average Days Between Survey Purchasing by Account ARR')
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Days Between Survey Purchasing')
 
     for m in range(len(avg_between['account_arr_binned'].value_counts())):
-        ax[0].bar_label(ax[0].containers[m])
+        ax.bar_label(ax.containers[m])
 
-    ax[0].legend(title="Account ARR", loc='lower right')
+    ax.legend(title="Account ARR", loc='lower right')
+    plt.tight_layout()
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    buf_read = buf.read()
+    plt.close()
+
+    return fig, buf_read
+
+
+def plot_acct_by_arr_halfyear(df: DataFrame):
+    ordered_half_years = get_ordered_half_years(df)
+
+    accts_arr_halfyear = df.groupby(['half_year_period', 'account_arr_binned']).agg(
+        number_of_accts=('account_id', 'nunique'))
+    accts_arr_tab = accts_arr_halfyear.groupby(['half_year_period', 'account_arr_binned']).sum().unstack(fill_value=0)
+    accts_arr_tab = accts_arr_tab.div(accts_arr_tab.sum(axis=1), axis=0) * 100
+
+    # Order by half year periods
+    accts_arr_tab.index = pd.CategoricalIndex(accts_arr_tab.index, categories=ordered_half_years, ordered=True)
+    accts_arr_tab.sort_index(inplace=True)
+
+    fig, ax = plt.subplots(figsize=(10, 3))
+
+    previous_width = [0] * len(accts_arr_tab.index)
+    labels = ['<50k', '50-100k', '100k+']
+    assert len(labels) == accts_arr_tab.shape[1], "Labels list must match the number of columns"
+
+    palette = sns.color_palette("Set2", n_colors=accts_arr_tab.shape[1])
+
+    for idx, (col, col_data) in enumerate(accts_arr_tab.iteritems()):
+        ax.barh(accts_arr_tab.index, col_data, color=palette[idx], left=previous_width, label=labels[idx])
+        for i, (bin, value) in enumerate(col_data.items()):
+            ax.text(previous_width[i] + value / 2, i, f"{value:.1f}%", va='center', ha='center', color='white',
+                    fontsize=10)
+            previous_width[i] += value
+
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("Percentage")
+    ax.set_title('% of Accounts by ARR')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    buf_read = buf.read()
+    plt.close()
+
+    return fig, buf_read
+
+
+def plot_maker_and_acct_by_arr_year(df: DataFrame):
+    fig, ax = plt.subplots(2, 1, figsize=(10, 4), gridspec_kw={'height_ratios': [1, 1]})
 
     # stacked row chart for makers proportion
-    makers_arr_year = df_days.groupby(['purchase_year', 'account_arr_binned']).agg(
+    makers_arr_year = df.groupby(['purchase_year', 'account_arr_binned']).agg(
         number_of_makers=('maker_id', 'nunique'))
     makers_arr_tab = makers_arr_year.groupby(['purchase_year', 'account_arr_binned']).sum().unstack(fill_value=0)
     makers_arr_tab = makers_arr_tab.div(makers_arr_tab.sum(axis=1), axis=0) * 100
     makers_arr_tab.index = makers_arr_tab.index.astype('str')
 
+    previous_width = [0] * len(makers_arr_tab.index)
     labels = ['<50k', '50-100k', '100k+']
-    palette = sns.color_palette("Set2", n_colors=len(labels))
+    assert len(labels) == makers_arr_tab.shape[1], "Labels list must match the number of columns"
 
-    previous_width = [0, 0]
+    palette = sns.color_palette("Set2", n_colors=makers_arr_tab.shape[1])
+
     for idx, (cols, col_data) in enumerate(makers_arr_tab.items()):
-        ax[1].barh(makers_arr_tab.index, col_data, color=palette[idx], left=previous_width, label=labels[idx])
-        previous_width += col_data
-    for i, (year, row) in enumerate(makers_arr_tab.iterrows()):
-        cumulative_width = 0
-        for j, (col, val) in enumerate(row.items()):
-            ax[1].text(x=cumulative_width + val / 2, y=year, s=f"{val:.1f}%", va='center', ha='center', color='white',
+        ax[0].barh(makers_arr_tab.index, col_data, color=palette[idx], left=previous_width, label=labels[idx])
+        for i, (bin, value) in enumerate(col_data.items()):
+            ax[0].text(previous_width[i] + value / 2, i, f"{value:.1f}%", va='center', ha='center', color='white',
                        fontsize=10)
-            cumulative_width += val
+            previous_width[i] += value
 
-    ax[1].set_xlim(0, 100)
-    ax[1].set_xticks([])
-
-    ax[1].set_title('Proportion of Makers by Account ARR')
+    ax[0].set_xlim(0, 100)
+    ax[0].set_xticks([])
+    ax[0].set_title('% of Makers by ARR')
 
     # stacked row chart for accounts proportion
-    accts_arr_year = df_days.groupby(['purchase_year', 'account_arr_binned']).agg(
+    accts_arr_year = df.groupby(['purchase_year', 'account_arr_binned']).agg(
         number_of_accounts=('account_id', 'nunique'))
     accts_arr_tab = accts_arr_year.groupby(['purchase_year', 'account_arr_binned']).sum().unstack(fill_value=0)
     accts_arr_tab = accts_arr_tab.div(accts_arr_tab.sum(axis=1), axis=0) * 100
     accts_arr_tab.index = accts_arr_tab.index.astype('str')
 
-    previous_width = [0, 0]
-    labels = ['<50k', '50-100k', '100k+']
-    palette = sns.color_palette("Set2", n_colors=len(labels))
+    previous_width = [0] * len(accts_arr_tab.index)
+    assert len(labels) == accts_arr_tab.shape[1], "Labels list must match the number of columns"
+
+    palette = sns.color_palette("Set2", n_colors=accts_arr_tab.shape[1])
 
     for idx, (cols, col_data) in enumerate(accts_arr_tab.items()):
-        ax[2].barh(accts_arr_tab.index, col_data, color=palette[idx], left=previous_width, label=labels[idx])
-        previous_width += col_data
-    for i, (year, row) in enumerate(accts_arr_tab.iterrows()):
-        cumulative_width = 0
-        for j, (col, val) in enumerate(row.items()):
-            ax[2].text(x=cumulative_width + val / 2, y=year, s=f"{val:.1f}%", va='center', ha='center', color='white',
+        ax[1].barh(accts_arr_tab.index, col_data, color=palette[idx], left=previous_width, label=labels[idx])
+        for i, (bin, value) in enumerate(col_data.items()):
+            ax[1].text(previous_width[i] + value / 2, i, f"{value:.1f}%", va='center', ha='center', color='white',
                        fontsize=10)
-            cumulative_width += val
+            previous_width[i] += value
 
-    ax[2].set_xlim(0, 100)
-    ax[2].set_xticks([])
-    ax[2].set_title('Proportion of Accounts by Account ARR')
-
-    plt.tight_layout()
+    ax[1].set_xlim(0, 100)
+    ax[1].set_xticks([])
+    ax[1].set_title('% of Accounts by ARR')
+    ax[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
@@ -449,10 +456,6 @@ def run_interaction_plotting_pipeline(df: DataFrame, arr_df: DataFrame):
         which is used for downloading the figures.
     """
 
-    # sorted_date = df[LAUNCH_MONTH_COL_NAME].sort_values().unique()
-
-    # surveys_df, size_df = prep_dataframe_for_plotting(df, cur_col)
-
     # If the selected time frame does not contain at least one entire half year period, the ARR plots are done with the
     # default time frame
     if arr_df.empty:
@@ -466,6 +469,7 @@ def run_interaction_plotting_pipeline(df: DataFrame, arr_df: DataFrame):
     fig3, img3 = plot_arr_engaged_time(arr_df)
     fig4, img4 = plot_days_engaged(df)
     fig5, img5 = plot_arr_days_engaged(arr_df)
+    fig6, img6 = plot_maker_by_arr(arr_df)
 
     final_dic = dict(
         {
@@ -478,7 +482,9 @@ def run_interaction_plotting_pipeline(df: DataFrame, arr_df: DataFrame):
             "fig4": fig4,
             "img4": img4,
             "fig5": fig5,
-            "img5": img5
+            "img5": img5,
+            "fig6": fig6,
+            "img6": img6
         }
     )
 
@@ -509,6 +515,8 @@ def run_survey_plotting_pipeline(orig_df: DataFrame, df: DataFrame, arr_df: Data
     fig1, img1 = plot_num_survey(df)
     fig2, img2 = plot_arr_num_survey(arr_df)
     fig3, img3 = plot_arr_days_between(orig_df)
+    fig4, img4 = plot_acct_by_arr_halfyear(arr_df)
+    fig5, img5 = plot_maker_and_acct_by_arr_year(df)
 
     final_dic = dict(
         {
@@ -517,7 +525,11 @@ def run_survey_plotting_pipeline(orig_df: DataFrame, df: DataFrame, arr_df: Data
             "fig2": fig2,
             "img2": img2,
             "fig3": fig3,
-            "img3": img3
+            "img3": img3,
+            "fig4": fig4,
+            "img4": img4,
+            "fig5": fig5,
+            "img5": img5
         }
     )
 
