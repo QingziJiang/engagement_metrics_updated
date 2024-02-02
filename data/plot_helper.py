@@ -1,9 +1,8 @@
 import io
 import seaborn as sns
 from matplotlib import pyplot as plt
-from pages.data.helper_functions import get_ordered_half_years, add_days_between_column
+from data.helper_functions import get_ordered_half_years, add_days_between_column
 from pandas import DataFrame
-import pandas as pd
 
 
 # Interactions
@@ -72,9 +71,12 @@ def plot_engaged_time(df: DataFrame):
                      alpha=0.4)
 
     for x, y in zip(avg_engage_m['engaged_month'], avg_engage_m['total_engaged_time_in_m']):
-        plt.text(x, y - 4, f'{int(y)}', color='black', ha='center', va='top')
+        if y >= 6:
+            plt.text(x, y-6, f'{int(y)}', color='black', ha='center', va='top')
+        else:
+            plt.text(x, y, f'{int(y)}', color='black', ha='center', va='top')
 
-    plt.title('Average Engagement Time per Maker per Month')
+    plt.title('Average Engagement Time (in minutes) per Month - Maker level')
     plt.ylabel('Average Engagement Time (m)')
     plt.xlabel('Month')
     plt.xticks(rotation=45)
@@ -108,7 +110,7 @@ def plot_arr_engaged_time(df: DataFrame):
 
     ax = sns.barplot(data=avg_engage_arr, x='half_year_period', y='avg_engaged_time_in_m', hue='account_arr_binned',
                      palette='Set2', order=ordered_half_years)
-    plt.title('Average Engagement Time by Account ARR')
+    plt.title('Average Engagement Time (in minutes) by ARR - Maker level')
     plt.ylabel('Average Engagement Time (m)')
     plt.xlabel('Six-month Period')
 
@@ -143,7 +145,7 @@ def plot_days_engaged(df: DataFrame):
     for x, y in zip(avg_days_engaged['engaged_month'], avg_days_engaged['engaged_days']):
         plt.text(x, y - 0.5, f'{y:.2f}', color='black', ha='center', va='top')
 
-    plt.title('Average Number of Days per Month a Maker Visits the Platform')
+    plt.title('Average Number of Days per Month a Maker Visits the Platform - Maker level')
     plt.ylabel('Number of Days')
     plt.xlabel('Month')
     plt.xticks(rotation=45)
@@ -174,9 +176,10 @@ def plot_arr_days_engaged(df: DataFrame):
     # bar plot
     fig = plt.figure(figsize=(10, 6))
 
-    ax = sns.barplot(data=avg_days_arr, x='half_year_period', y='engaged_days', hue='account_arr_binned', palette='Set2',
-                order=ordered_half_years)
-    ax.set_title('Average Number of Days Visited by Account ARR')
+    ax = sns.barplot(data=avg_days_arr, x='half_year_period', y='engaged_days', hue='account_arr_binned',
+                     palette='Set2',
+                     order=ordered_half_years)
+    ax.set_title('Average Number of Days Visited by ARR - Maker level')
     ax.set_xlabel('Six-month Period')
     ax.set_ylabel('Average Number of Days')
 
@@ -184,118 +187,6 @@ def plot_arr_days_engaged(df: DataFrame):
         ax.bar_label(ax.containers[m])
 
     ax.legend(title="Account ARR", loc='lower right')
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png")
-    buf.seek(0)
-    buf_read = buf.read()
-    plt.close()
-
-    return fig, buf_read
-
-
-def plot_maker_by_arr(df: DataFrame):
-    ordered_half_years = get_ordered_half_years(df)
-
-    makers_arr_halfyear = df.groupby(['half_year_period', 'account_arr_binned']).agg(
-        number_of_makers=('maker_id', 'nunique'))
-    makers_arr_tab = makers_arr_halfyear.groupby(['half_year_period', 'account_arr_binned']).sum().unstack(fill_value=0)
-    makers_arr_tab = makers_arr_tab.div(makers_arr_tab.sum(axis=1), axis=0) * 100
-
-    # Order by half year periods
-    makers_arr_tab.index = pd.CategoricalIndex(makers_arr_tab.index, categories=ordered_half_years, ordered=True)
-    makers_arr_tab.sort_index(inplace=True)
-
-    fig, ax = plt.subplots(figsize=(10, 2))
-
-    previous_width = [0] * len(makers_arr_tab.index)
-    labels = ['<50k', '50-100k', '100k+']
-    assert len(labels) == makers_arr_tab.shape[1], "Labels list must match the number of columns"
-
-    palette = sns.color_palette("Set2", n_colors=makers_arr_tab.shape[1])
-
-    for idx, (col, col_data) in enumerate(makers_arr_tab.iteritems()):
-        ax.barh(makers_arr_tab.index, col_data, color=palette[idx], left=previous_width, label=labels[idx])
-        for i, (bin, value) in enumerate(col_data.items()):
-            ax.text(previous_width[i] + value / 2, i, f"{value:.1f}%", va='center', ha='center', color='white',
-                    fontsize=10)
-            previous_width[i] += value
-
-    ax.set_xlim(0, 100)
-    ax.set_title('% of Makers by ARR')
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png")
-    buf.seek(0)
-    buf_read = buf.read()
-    plt.close()
-
-    return fig, buf_read
-
-
-# Survey purchase frequencies
-def plot_num_survey(df: DataFrame):
-    """
-    :param df: the survey
-    :return: a line plot of Average Number of Survey purchased
-    """
-    survey_freq_acct = df.drop(['maker_id', 'purchase_day'], axis=1).drop_duplicates()
-    avg_survey_acct = survey_freq_acct.groupby(['purchase_month'])['monthly_total_survey'].mean().round(2).reset_index()
-
-    fig = plt.figure(figsize=(14, 4))
-    ax = sns.lineplot(data=avg_survey_acct, x='purchase_month', y='monthly_total_survey', marker='o')
-
-    plt.fill_between(avg_survey_acct['purchase_month'], avg_survey_acct['monthly_total_survey'], color='steelblue',
-                     alpha=0.4)
-
-    for x, y in zip(avg_survey_acct['purchase_month'], avg_survey_acct['monthly_total_survey']):
-        plt.text(x, y - 0.4, f'{y:.2f}', color='black', ha='center', va='top')
-
-    plt.title('Average Number of Survey Purchased per Account per Month')
-    plt.ylabel('Number of Survey')
-    plt.xlabel('Month')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png")
-    buf.seek(0)
-    buf_read = buf.read()
-    plt.close()
-
-    return fig, buf_read
-
-
-def plot_arr_num_survey(df: DataFrame):
-    """
-    :param df: the survey df
-    :return: a bar plot for Number of Survey Purchased across ARR brackets, with a stacked row chart showing the
-    proportion of accounts by ARR.
-    """
-    # get a sorted list of half year periods
-    ordered_half_years = get_ordered_half_years(df)
-
-    # prepare aggregated data for bar plot
-    survey_freq_acct = df.drop(['maker_id', 'purchase_day'], axis=1).drop_duplicates()
-    survey_freq_arr = survey_freq_acct.groupby(['account_arr_binned', 'half_year_period'])[
-        'monthly_total_survey'].mean().round(2).reset_index()
-
-
-    # bar plot
-    fig = plt.figure(figsize=(12, 6))
-
-    ax = sns.barplot(data=survey_freq_arr, x='half_year_period', y='monthly_total_survey', hue='account_arr_binned',
-                palette='Set2', order=ordered_half_years)
-    ax.set_title('Average Number of Survey Purchased by ARR')
-    ax.set_xlabel('Six-month Period')
-    ax.set_ylabel('Number of Survey')
-
-    for m in range(len(survey_freq_arr['account_arr_binned'].value_counts())):
-        ax.bar_label(ax.containers[m])
-
-    ax.legend(title="Account ARR", loc='lower right')
-    plt.tight_layout()
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
@@ -324,7 +215,7 @@ def plot_arr_days_between(df: DataFrame):
     # bar plot
     ax = sns.barplot(data=avg_between, x='purchase_year', y='days_from_previous', hue='account_arr_binned',
                      palette='Set2', order=['2022', '2023'])
-    ax.set_title('Average Days Between Survey Purchasing by Account ARR')
+    ax.set_title('Average Days Between Survey Purchasing by ARR - Maker level')
     ax.set_xlabel('Year')
     ax.set_ylabel('Days Between Survey Purchasing')
 
@@ -333,47 +224,6 @@ def plot_arr_days_between(df: DataFrame):
 
     ax.legend(title="Account ARR", loc='lower right')
     plt.tight_layout()
-
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png")
-    buf.seek(0)
-    buf_read = buf.read()
-    plt.close()
-
-    return fig, buf_read
-
-
-def plot_acct_by_arr_halfyear(df: DataFrame):
-    ordered_half_years = get_ordered_half_years(df)
-
-    accts_arr_halfyear = df.groupby(['half_year_period', 'account_arr_binned']).agg(
-        number_of_accts=('account_id', 'nunique'))
-    accts_arr_tab = accts_arr_halfyear.groupby(['half_year_period', 'account_arr_binned']).sum().unstack(fill_value=0)
-    accts_arr_tab = accts_arr_tab.div(accts_arr_tab.sum(axis=1), axis=0) * 100
-
-    # Order by half year periods
-    accts_arr_tab.index = pd.CategoricalIndex(accts_arr_tab.index, categories=ordered_half_years, ordered=True)
-    accts_arr_tab.sort_index(inplace=True)
-
-    fig, ax = plt.subplots(figsize=(10, 3))
-
-    previous_width = [0] * len(accts_arr_tab.index)
-    labels = ['<50k', '50-100k', '100k+']
-    assert len(labels) == accts_arr_tab.shape[1], "Labels list must match the number of columns"
-
-    palette = sns.color_palette("Set2", n_colors=accts_arr_tab.shape[1])
-
-    for idx, (col, col_data) in enumerate(accts_arr_tab.iteritems()):
-        ax.barh(accts_arr_tab.index, col_data, color=palette[idx], left=previous_width, label=labels[idx])
-        for i, (bin, value) in enumerate(col_data.items()):
-            ax.text(previous_width[i] + value / 2, i, f"{value:.1f}%", va='center', ha='center', color='white',
-                    fontsize=10)
-            previous_width[i] += value
-
-    ax.set_xlim(0, 100)
-    ax.set_xlabel("Percentage")
-    ax.set_title('% of Accounts by ARR')
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
@@ -444,13 +294,14 @@ def plot_maker_and_acct_by_arr_year(df: DataFrame):
     return fig, buf_read
 
 
-def run_interaction_plotting_pipeline(df: DataFrame, arr_df: DataFrame):
+def run_interaction_plotting_pipeline(df: DataFrame, arr_df: DataFrame, account_df: DataFrame):
     """
     This pipeline function runs all the functions necessary to get the interaction metrics plots.
 
     Args:
         df (DataFrame): interaction_df, the input dataframe for active makers and engagement metrics.
         arr_df (DataFrame): arr_interaction_df, the input dataframe for arr plots, which only include entire half years.
+        account_df:
     Returns:
         A dictionary of all the figure object (fig) to be plotted and a buffer (buf_read)
         which is used for downloading the figures.
@@ -465,58 +316,10 @@ def run_interaction_plotting_pipeline(df: DataFrame, arr_df: DataFrame):
 
     # interaction metrics
     fig1, img1 = plot_active_makers(df)
-    fig2, img2 = plot_engaged_time(df)
+    fig2, img2 = plot_engaged_time(account_df)
     fig3, img3 = plot_arr_engaged_time(arr_df)
-    fig4, img4 = plot_days_engaged(df)
+    fig4, img4 = plot_days_engaged(account_df)
     fig5, img5 = plot_arr_days_engaged(arr_df)
-    fig6, img6 = plot_maker_by_arr(arr_df)
-
-    final_dic = dict(
-        {
-            "fig1": fig1,
-            "img1": img1,
-            "fig2": fig2,
-            "img2": img2,
-            "fig3": fig3,
-            "img3": img3,
-            "fig4": fig4,
-            "img4": img4,
-            "fig5": fig5,
-            "img5": img5,
-            "fig6": fig6,
-            "img6": img6
-        }
-    )
-
-    return final_dic
-
-
-def run_survey_plotting_pipeline(orig_df: DataFrame, df: DataFrame, arr_df: DataFrame):
-    """
-    This pipeline function runs all the functions necessary to get all the plots.
-
-    Args:
-        df (DataFrame): survey_df, the input dataframe for survey frequency metrics.
-        arr_df (DataFrame): arr_survey_df, the input dataframe for arr plots, which only include entire half years.
-        orig_df:
-    Returns:
-        A dictionary of all the figure object (fig) to be plotted and a buffer (buf_read)
-        which is used for downloading the figures.
-    """
-
-    # If the selected time frame does not contain at least one entire half year period, the ARR plots are done with the
-    # default time frame
-    if arr_df.empty:
-        arr_df = df
-    else:
-        arr_df = arr_df
-
-    # survey freq metrics
-    fig1, img1 = plot_num_survey(df)
-    fig2, img2 = plot_arr_num_survey(arr_df)
-    fig3, img3 = plot_arr_days_between(orig_df)
-    fig4, img4 = plot_acct_by_arr_halfyear(arr_df)
-    fig5, img5 = plot_maker_and_acct_by_arr_year(df)
 
     final_dic = dict(
         {
@@ -530,6 +333,34 @@ def run_survey_plotting_pipeline(orig_df: DataFrame, df: DataFrame, arr_df: Data
             "img4": img4,
             "fig5": fig5,
             "img5": img5
+        }
+    )
+
+    return final_dic
+
+
+def run_survey_plotting_pipeline(orig_df: DataFrame, df: DataFrame):
+    """
+    This pipeline function runs all the functions necessary to get all the plots.
+
+    Args:
+        df (DataFrame): survey_df, the input dataframe for survey frequency metrics.
+        orig_df:
+    Returns:
+        A dictionary of all the figure object (fig) to be plotted and a buffer (buf_read)
+        which is used for downloading the figures.
+    """
+
+    # survey freq metrics
+    fig6, img6 = plot_arr_days_between(orig_df)
+    fig7, img7 = plot_maker_and_acct_by_arr_year(df)
+
+    final_dic = dict(
+        {
+            "fig6": fig6,
+            "img6": img6,
+            "fig7": fig7,
+            "img7": img7
         }
     )
 

@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 from kyber_dwh import DataWarehouse
-from pages.data.queries import interaction_query, survey_query
-from pages.data.helper_functions import get_binned_arr, half_year
+from data.queries import interaction_query, survey_query
+from data.helper_functions import get_binned_arr, half_year
 
 st.cache(allow_output_mutation=True)
 

@@ -11,6 +11,7 @@ WITH num_engaged_days AS (
 SELECT 
     m.maker_id,
     acct.account_id,
+    acct.account_name,
     (TO_CHAR(DATE_TRUNC('month', a.day_date), 'YYYY-MM')) AS engaged_month,
     ned.engaged_days,
     a.total_engaged_time_in_s / 60 AS total_engaged_time_in_m,
@@ -24,7 +25,7 @@ LEFT JOIN dwh.dbt_reporting.accounts AS acct ON acct.account_id = m.account_id
 LEFT JOIN num_engaged_days AS ned ON ned.maker_guid = a.maker_guid AND ned.engaged_month = (TO_CHAR(DATE_TRUNC('month', 
 a.day_date), 'YYYY-MM'))
 
-WHERE (TO_CHAR(DATE_TRUNC('month', a.day_date), 'YYYY-MM')) >= '2022-10'
+WHERE (TO_CHAR(DATE_TRUNC('month', a.day_date), 'YYYY-MM')) >= '2022-01'
 AND LAST_DAY(a.day_date) = a.day_date
 AND num_unique_interactions IS NOT NULL
 AND total_engaged_time_in_s IS NOT NULL
@@ -43,7 +44,7 @@ WITH survey_count_day AS (
     COUNT(*) AS daily_total_survey
     FROM dwh.dbt_reporting.surveys
     WHERE status NOT IN ('archived', 'deleted', 'draft') 
-    AND purchase_time > '2022-01-01'
+    AND purchase_time >= '2022-01-01'
     GROUP BY maker_id, (TO_CHAR(DATE_TRUNC('day', purchase_time), 'YYYY-MM-DD'))
 ),
 
@@ -60,6 +61,7 @@ survey_count_month AS (
 SELECT DISTINCT
     m.maker_id,
     acct.account_id,
+    acct.account_name,
     scm.purchase_month,
     scm.num_days_survey,
     scm.monthly_total_survey,
